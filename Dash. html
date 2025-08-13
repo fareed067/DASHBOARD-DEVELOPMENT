@@ -1,0 +1,47 @@
+import pandas as pd
+import plotly.express as px
+from dash import Dash, dcc, html, Input, Output
+
+# Sample dataset
+df = px.data.gapminder()
+
+# Create app
+app = Dash(__name__)
+
+app.layout = html.Div([
+    html.H1("Simple Interactive Dashboard", style={'textAlign': 'center'}),
+
+    # Dropdown filter for country
+    dcc.Dropdown(
+        id='country-filter',
+        options=[{'label': c, 'value': c} for c in df['country'].unique()],
+        value='India'
+    ),
+
+    # Graph
+    dcc.Graph(id='line-chart'),
+
+    # Insights
+    html.Div(id='insights', style={'padding': '20px', 'fontWeight': 'bold'})
+])
+
+# Callbacks
+@app.callback(
+    [Output('line-chart', 'figure'),
+     Output('insights', 'children')],
+    [Input('country-filter', 'value')]
+)
+def update_dashboard(country):
+    filtered = df[df['country'] == country]
+    fig = px.line(filtered, x='year', y='gdpPercap', title=f"GDP per Capita - {country}")
+
+    latest_value = filtered.iloc[-1]['gdpPercap']
+    prev_value = filtered.iloc[-2]['gdpPercap']
+    change = ((latest_value - prev_value) / prev_value) * 100
+
+    insight = f"In {filtered.iloc[-1]['year']}, GDP per capita was {latest_value:,.2f} USD. Change from previous year: {change:.2f}%."
+    return fig, insight
+
+if __name__ == '__main__':
+    app.run(debug=True)  # Updated for Dash 3.x
+Run it locally:
